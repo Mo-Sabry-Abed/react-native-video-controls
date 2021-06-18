@@ -31,8 +31,6 @@ export default class VideoPlayer extends Component {
     volume: 1,
     title: '',
     rate: 1,
-    showTimeRemaining: true,
-    showHours: false,
   };
 
   constructor(props) {
@@ -53,8 +51,7 @@ export default class VideoPlayer extends Component {
 
       isFullscreen:
         this.props.isFullScreen || this.props.resizeMode === 'cover' || false,
-      showTimeRemaining: this.props.showTimeRemaining,
-      showHours: this.props.showHours,
+      showTimeRemaining: true,
       volumeTrackWidth: 0,
       volumeFillWidth: 0,
       seekerFillWidth: 0,
@@ -110,6 +107,7 @@ export default class VideoPlayer extends Component {
       togglePlayPause: this._togglePlayPause.bind(this),
       toggleControls: this._toggleControls.bind(this),
       toggleTimer: this._toggleTimer.bind(this),
+      seekTo: this.seekTo.bind(this),
     };
 
     /**
@@ -491,10 +489,10 @@ export default class VideoPlayer extends Component {
 
     if (state.isFullscreen) {
       typeof this.events.onEnterFullscreen === 'function' &&
-        this.events.onEnterFullscreen();
+        this.events.onEnterFullscreen(state.currentTime);
     } else {
       typeof this.events.onExitFullscreen === 'function' &&
-        this.events.onExitFullscreen();
+        this.events.onExitFullscreen(state.currentTime);
     }
 
     this.setState(state);
@@ -565,22 +563,10 @@ export default class VideoPlayer extends Component {
     const symbol = this.state.showRemainingTime ? '-' : '';
     time = Math.min(Math.max(time, 0), this.state.duration);
 
-    if (!this.state.showHours) {
-      const formattedMinutes = padStart(Math.floor(time / 60).toFixed(0), 2, 0);
-      const formattedSeconds = padStart(Math.floor(time % 60).toFixed(0), 2, 0);
-
-      return `${symbol}${formattedMinutes}:${formattedSeconds}`;
-    }
-
-    const formattedHours = padStart(Math.floor(time / 3600).toFixed(0), 2, 0);
-    const formattedMinutes = padStart(
-      (Math.floor(time / 60) % 60).toFixed(0),
-      2,
-      0,
-    );
+    const formattedMinutes = padStart(Math.floor(time / 60).toFixed(0), 2, 0);
     const formattedSeconds = padStart(Math.floor(time % 60).toFixed(0), 2, 0);
 
-    return `${symbol}${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    return `${symbol}${formattedMinutes}:${formattedSeconds}`;
   }
 
   /**
@@ -1026,10 +1012,7 @@ export default class VideoPlayer extends Component {
    * Render fullscreen toggle and set icon based on the fullscreen state.
    */
   renderFullscreen() {
-    let source =
-      this.state.isFullscreen === true
-        ? require('./assets/img/shrink.png')
-        : require('./assets/img/expand.png');
+    let source = require('./assets/img/expand.png');
     return this.renderControl(
       <Image source={source} />,
       this.methods.toggleFullscreen,
